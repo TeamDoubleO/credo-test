@@ -64,23 +64,24 @@ import 'react-native-quick-crypto';
 // 지갑 정보
 const walletId = 'test-wallet-id-1'
 const walletKey = 'testkey00000000000000000000000000'
-//======================================================================[    NEW    ]======================================================================================
+//======================================================================[    NEW.1   ]======================================================================================
 // API 기본 URL (실제 서버 주소로 변경 필요)
-const API_BASE_URL = 'http://192.168.0.68:8080'
+const API_BASE_URL = 'http://192.168.0.82:8080'
 // 병원 연결 요청
 const HOSPITAL_INFO = {
-  passId: 103,
+  passId: 104,
   hospitalId: 1
 }
 // Polling 간격
-const HOSPITAL_POLL_INTERVAL = 20000 // 1분
-//======================================================================[    NEW    ]======================================================================================
+const HOSPITAL_POLL_INTERVAL = 2000 // 1분
+//======================================================================[    NEW.1  ]======================================================================================
 export default function App() {
   const isDarkMode = useColorScheme() === 'dark'
   const backgroundStyle = {
     backgroundColor: isDarkMode ? '#181818' : '#f3f3f3',
   }
 
+  //======================================================================[    NEW.2: Agent Config  ]======================================================================================
   // ---- 상태 변수들 ----
   const [agent, setAgent] = useState(null)
   const [peerDid, setPeerDid] = useState(null)
@@ -125,7 +126,6 @@ export default function App() {
       const legacyIndyCredentialFormat = new LegacyIndyCredentialFormatService()
       const legacyIndyProofFormat = new LegacyIndyProofFormatService()
 
-      // API에서 mediator 정보를 가져오거나 기본값 사용
       let mediatorInvitationUrl = mediatorUrl
       if (!mediatorInvitationUrl) {
         try {
@@ -134,7 +134,7 @@ export default function App() {
           console.log('✅ API에서 Mediator 초대 URL 획득:', mediatorInvitationUrl)
         } catch (error) {
           console.warn('⚠️ API에서 Mediator 정보 획득 실패, 기본값 사용')
-          // 기본 mediator URL 사용 (기존 코드에서 가져옴)
+          // 기본 mediator URL 사용: 기본적으로 테스트 할 때 하나 받아서 녛어두면 좋을 듯
           mediatorInvitationUrl = 'ws://10.221.84.216:8000?oob=eyJAdHlwZSI6ICJodHRwczovL2RpZGNvbW0ub3JnL291dC1vZi1iYW5kLzEuMS9pbnZpdGF0aW9uIiwgIkBpZCI6ICJhYWNhODc0Yi0zNzVmLTQ1YzAtYTUyMC0yNmM0MWUyOGU2NTIiLCAibGFiZWwiOiAibWVkaWF0b3ItYWNhcHkiLCAiaGFuZHNoYWtlX3Byb3RvY29scyI6IFsiaHR0cHM6Ly9kaWRjb21tLm9yZy9kaWRleGNoYW5nZS8xLjAiXSwgImFjY2VwdCI6IFsiZGlkY29tbS9haXAyO2Vudj1yZmMxOSJdLCAic2VydmljZXMiOiBbImRpZDpwZWVyOjIuVno2TWtzY0s3MUhkeWpUV2c4ajJGWTIzS0E3UVVIU3RXdld6QmdFbUU3WENXUmtYZy5FejZMU25qWUNIenVSWTNLR2ZOSFJTNEdVVnE1TUJHUzRHdEE3WDFnTmNzVFMySGJlLlNleUpwWkNJNklpTmthV1JqYjIxdExUQWlMQ0owSWpvaVpHbGtMV052YlcxMWJtbGpZWFJwYjI0aUxDSndjbWx2Y21sMGVTSTZNQ3dpY21WamFYQnBaVzUwUzJWNWN5STZXeUlqYTJWNUxURWlYU3dpY2lJNlcxMHNJbk1pT2lKM2N6b3ZMekV3TGpJeU1TNDROQzR5TVRZNk9EQXdNQ0o5Il19'
         }
       }
@@ -208,12 +208,12 @@ export default function App() {
             const { credentialRecord } = payload
             switch (credentialRecord.state) {
               case CredentialState.OfferReceived:
-                await _agent.credentials.acceptOffer({
-                  credentialRecordId: credentialRecord.id,
-                  credentialFormats: {
-                    jsonld: undefined
-                  }
-                })
+                // await _agent.credentials.acceptOffer({
+                //   credentialRecordId: credentialRecord.id,
+                //   credentialFormats: {
+                //     jsonld: undefined
+                //   }
+                // })
                 break
               case CredentialState.Done:
                 console.log(`Credential for credential id ${credentialRecord.id} is accepted`)
@@ -241,7 +241,7 @@ export default function App() {
       setMediatorConnected(true)
       setConnStatus('✅ Agent 초기화 완료 - Mediator 연결됨')
 
-      // Agent 초기화 완료 후 Hospital polling 시작
+      //Agent 초기화 완료 후 Hospital polling 시작
       startHospitalPolling(_agent)
 
       return _agent
@@ -259,7 +259,8 @@ export default function App() {
       throw err
     }
   }
-
+  //======================================================================[    NEW.2: Agent Config  ]======================================================================================
+//======================================================================[    NEW.3: polling method   ]======================================================================================
   // ---- Hospital Polling 시작 함수 ----
   const startHospitalPolling = (_agent) => {
     if (hospitalPollTimer.current) {
@@ -287,7 +288,6 @@ export default function App() {
     setIsPollingActive(false)
     setConnStatus('⏹️ Hospital polling 중지됨')
   }
-//======================================================================[    NEW    ]======================================================================================
   // ---- Hospital 초대 정보 polling 함수 ----
   const pollHospitalInvitation = async (_agent) => {
     if (!_agent || hospitalConnected) {
@@ -310,7 +310,7 @@ export default function App() {
       setConnStatus('❌ Hospital 초대 정보 요청 실패, 계속 재시도 중...')
     }
   }
-//======================================================================[    NEW    ]======================================================================================
+
   // ---- Hospital 연결 함수 ----
   const connectToHospital = async (_agent, invitationUrl) => {
     try {
@@ -332,17 +332,14 @@ export default function App() {
       console.log('✅ Hospital 연결 성공')
       setHospitalConnected(true)
       setConnStatus('✅ Hospital 연결 완료')
-//======================================================================[    NEW    ]======================================================================================
       // Hospital 연결 성공 시 polling 중지
       stopHospitalPolling()
-//======================================================================[    NEW    ]======================================================================================
     } catch (error) {
       console.error('❌ Hospital 연결 실패:', error)
       setConnStatus(`❌ Hospital 연결 실패: ${error.message || String(error)}`)
     }
   }
 
-//======================================================================[    NEW    ]======================================================================================
   // ---- 컴포넌트 마운트 시 Agent 초기화 ----
   useEffect(() => {
     initializeAgent().catch(console.error)
@@ -354,7 +351,9 @@ export default function App() {
       }
     }
   }, [])
-//======================================================================[    NEW    ]======================================================================================
+
+
+  //======================================================================[    NEW.3: polling method    ]======================================================================================
   // ---- 수동 Hospital 연결 함수 (기존 버튼용) ----
   const connectHospital = async () => {
     if (!agent) {
@@ -439,9 +438,11 @@ export default function App() {
       return
     }
     try {
+
+//======================================================================[    NEW.4: 지갑 삭제 시 polling 중지    ]======================================================================================
       // Polling 중지
       stopHospitalPolling()
-
+//======================================================================[    NEW.4: 지갑 삭제 시 polling 중지    ]======================================================================================
       await agent.wallet.delete()
       console.log('✅ 지갑이 성공적으로 삭제되었습니다.')
       setConnStatus('✅ 지갑 삭제 완료')
@@ -455,7 +456,7 @@ export default function App() {
       setConnStatus(`❌ 지갑 삭제 실패: ${error.message || String(error)}`)
     }
   }
-//======================================================================[    NEW    ]======================================================================================
+//======================================================================[    NEW.5: Agent 재초기화  ]======================================================================================
   // ---- Agent 재초기화 함수 ----
   const reinitializeAgent = async () => {
     try {
@@ -473,7 +474,7 @@ export default function App() {
       setConnStatus(`Agent 재초기화 실패: ${error.message || String(error)}`)
     }
   }
-//======================================================================[    NEW    ]======================================================================================
+//======================================================================[    NEW.5: Agent 재초기화    ]======================================================================================
   return (
       <SafeAreaView style={[styles.container, backgroundStyle]}>
         <StatusBar
@@ -512,7 +513,7 @@ export default function App() {
           </View>
           <View style={styles.buttonContainer}>
             <Button
-                title="🏥 Hospital 수동 연결"
+                title="Hospital 수동 연결"
                 onPress={connectHospital}
                 disabled={hospitalConnected}
             />
